@@ -1,36 +1,28 @@
-
-const puppeteer = require('puppeteer');
 const express = require('express');
+const puppeteer = require('puppeteer');
+
 const app = express();
-app.use(express.json());
+const port = process.env.PORT || 3000;
 
-app.post('/run-temu-order', async (req, res) => {
-    const { productLinks } = req.body;
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
-
+app.get('/run-temu-order', async (req, res) => {
     try {
-        await page.goto('https://www.temu.com', { waitUntil: 'networkidle2' });
+        const browser = await puppeteer.launch({
+            headless: true,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        });
+        const page = await browser.newPage();
+        await page.goto('https://www.temu.com/');
 
-        for (const link of productLinks) {
-            await page.goto(link, { waitUntil: 'networkidle2' });
-            const addToCartButton = await page.$('button[data-testid="add-to-cart"]');
-            if (addToCartButton) {
-                await addToCartButton.click();
-                await page.waitForTimeout(2000);
-            }
-        }
+        console.log('Visited Temu homepage');
 
         await browser.close();
-        res.status(200).send('Products added to Temu cart successfully!');
+        res.send('Temu order script ran successfully!');
     } catch (error) {
         console.error(error);
-        await browser.close();
-        res.status(500).send('Error adding products to Temu cart.');
+        res.status(500).send('Error running Temu order script.');
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
 });
